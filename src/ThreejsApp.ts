@@ -3,8 +3,10 @@ import * as THREE from "three"
 import { OrbitControls } from "three/addons/controls/OrbitControls.js"
 
 import Entity from "./Entity"
+import Light from "./Light"
 import Ground from "./Ground"
 import PlanarDragControls from "./PlanarDragControls"
+import Lock from "./Lock"
 
 // import LinearDragControls from "./LinearDragControls"
 import AssetSelector from "./AssetSelector"
@@ -23,6 +25,7 @@ class ThreejsApp {
   entityManager: EntityManager
 
   editMode = false
+  newEntityType: string
 
   ghost: THREE.Mesh
 
@@ -48,14 +51,8 @@ class ThreejsApp {
 
     this.entityManager = new EntityManager(this)
     this.entityManager.add(
-      new Entity(this, { position: new THREE.Vector3(-2, 1, 3) })
+      new Lock(this, { position: new THREE.Vector3(-2, 1, 3) })
     )
-
-    // TODO: consider an array
-    // this.entities = [
-    //   new Entity(this, { position: new THREE.Vector3(-2, 1, 3) }),
-    //   new Entity(this, { position: new THREE.Vector3(0, -1, -5) }),
-    // ]
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 1)
     this.scene.add(ambientLight)
@@ -65,6 +62,9 @@ class ThreejsApp {
 
     this.ground = new Ground(this)
 
+    this.newEntityType = "light"
+
+    // TODO: ghost should be that of the new device
     this.ghost = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1))
 
     this.assetSelector = new AssetSelector(this)
@@ -84,9 +84,15 @@ class ThreejsApp {
     domElement.addEventListener("pointerup", this.onPointerUp)
     domElement.addEventListener("pointermove", this.onPointerMove)
 
-    document
-      .getElementById("addButton")
-      ?.addEventListener("click", this.toggleEditMode)
+    document.getElementById("addLightButton")?.addEventListener("click", () => {
+      this.newEntityType = "light"
+      this.toggleEditMode()
+    })
+
+    document.getElementById("addLockButton")?.addEventListener("click", () => {
+      this.newEntityType = "lock"
+      this.toggleEditMode()
+    })
 
     document.getElementById("deleteButton")?.addEventListener("click", () => {
       this.removeEntity(this.assetSelector.selected.id)
@@ -140,8 +146,10 @@ class ThreejsApp {
   }
 
   addEntity = (position: THREE.Vector3) => {
-    const newEntity = new Entity(this, { position })
-    this.entityManager.add(newEntity)
+    if (this.newEntityType === "light")
+      this.entityManager.add(new Light(this, { position }))
+    else if (this.newEntityType === "lock")
+      this.entityManager.add(new Lock(this, { position }))
   }
 
   removeEntity = (entityId: number) => {
