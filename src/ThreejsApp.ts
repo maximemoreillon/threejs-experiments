@@ -2,26 +2,27 @@ import * as THREE from "three"
 // @ts-ignore
 import { OrbitControls } from "three/addons/controls/OrbitControls.js"
 
-import Entity from "./Entity"
 import Light from "./Light"
 import Ground from "./Ground"
 import PlanarDragControls from "./PlanarDragControls"
 import Lock from "./Lock"
 
 // import LinearDragControls from "./LinearDragControls"
-import AssetSelector from "./AssetSelector"
+import EntitySelector from "./EntitySelector"
 import EntityManager from "./EntityManager"
+import Intersector from "./Intersector"
 
 class ThreejsApp {
   scene: THREE.Scene
   renderer: THREE.WebGLRenderer
   camera: THREE.PerspectiveCamera
   controls: OrbitControls
-  raycaster: THREE.Raycaster
 
   ground: Ground
+  groundIntersector: Intersector
+
   dragControls: PlanarDragControls
-  assetSelector: AssetSelector
+  entitySelector: EntitySelector
   entityManager: EntityManager
 
   editMode = false
@@ -51,23 +52,27 @@ class ThreejsApp {
 
     this.entityManager = new EntityManager(this)
     this.entityManager.add(
-      new Lock(this, { position: new THREE.Vector3(-2, 1, 3) })
+      new Light(this, { position: new THREE.Vector3(-2, 1, 3) })
+    )
+    this.entityManager.add(
+      new Lock(this, { position: new THREE.Vector3(2, 2, -1) })
     )
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 1)
     this.scene.add(ambientLight)
 
-    // Unused
-    this.raycaster = new THREE.Raycaster()
-
     this.ground = new Ground(this)
+    this.groundIntersector = new Intersector(this, [this.ground.mesh])
+
+    this.groundIntersector.eventEmitter.on("pointerDown", this.onPointerDown)
+    this.groundIntersector.eventEmitter.on("pointerMove", this.onPointerMove)
 
     this.newEntityType = "light"
 
     // TODO: ghost should be that of the new device
     this.ghost = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1))
 
-    this.assetSelector = new AssetSelector(this)
+    this.entitySelector = new EntitySelector(this)
     this.dragControls = new PlanarDragControls(this)
 
     // Prevent orbitcontrols rotation when dragging objects
@@ -80,9 +85,9 @@ class ThreejsApp {
     })
 
     const { domElement } = this.renderer
-    domElement.addEventListener("pointerdown", this.onPointerDown)
+    // domElement.addEventListener("pointerdown", this.onPointerDown)
     domElement.addEventListener("pointerup", this.onPointerUp)
-    domElement.addEventListener("pointermove", this.onPointerMove)
+    // domElement.addEventListener("pointermove", this.onPointerMove)
 
     document.getElementById("addLightButton")?.addEventListener("click", () => {
       this.newEntityType = "light"
@@ -95,7 +100,7 @@ class ThreejsApp {
     })
 
     document.getElementById("deleteButton")?.addEventListener("click", () => {
-      this.removeEntity(this.assetSelector.selected.id)
+      this.removeEntity(this.entitySelector.selected.id)
     })
 
     this.animate()
@@ -107,41 +112,13 @@ class ThreejsApp {
     else this.scene.remove(this.ghost)
   }
 
-  onPointerDown = ({ clientX, clientY }: PointerEvent) => {
+  onPointerDown = (intersect: any) => {
     if (!this.editMode) return
-    const { left, top, width, height } =
-      this.renderer.domElement.getBoundingClientRect()
-    const pointer = {
-      x: ((clientX - left) / width) * 2 - 1,
-      y: -((clientY - top) / height) * 2 + 1,
-    }
-    this.raycaster.setFromCamera(pointer, this.camera)
-
-    const [intersect] = this.raycaster.intersectObjects(
-      [this.ground.mesh],
-      true
-    )
-    if (!intersect) return
-
     this.addEntity(intersect.point)
     this.toggleEditMode()
   }
   onPointerUp = () => {}
-  onPointerMove = ({ clientX, clientY }: PointerEvent) => {
-    const { left, top, width, height } =
-      this.renderer.domElement.getBoundingClientRect()
-    const pointer = {
-      x: ((clientX - left) / width) * 2 - 1,
-      y: -((clientY - top) / height) * 2 + 1,
-    }
-    this.raycaster.setFromCamera(pointer, this.camera)
-
-    const [intersect] = this.raycaster.intersectObjects(
-      [this.ground.mesh],
-      true
-    )
-    if (!intersect) return
-
+  onPointerMove = (intersect: any) => {
     this.ghost.position.copy(intersect.point)
   }
 

@@ -21,7 +21,9 @@ class Entity {
     // TODO: figure out if a hitbox is a good idea
     // TODO: consider if a hitbox class could be a good idea
     // TODO: hitbox sizing
+    // TODO: hitbox material
     this.hitbox = new THREE.Mesh(new BoxGeometry())
+    this.hitbox.visible = false
     this.mesh = new THREE.Mesh()
 
     this.app.scene.add(this.group)
@@ -29,9 +31,7 @@ class Entity {
   }
 
   remove = () => {
-    // TODO: remove from asset list
-    this.app.scene.remove(this.group)
-    // OR could call the remove of the ThreejsApp
+    this.app.entityManager.remove(this.group.id)
   }
 }
 

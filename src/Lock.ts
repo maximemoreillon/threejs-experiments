@@ -6,7 +6,6 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js"
 class Lock extends Entity {
   constructor(app: ThreejsApp, params: {}) {
     super(app, params)
-    console.log("Hi")
     this.loadModel()
   }
 
@@ -23,7 +22,7 @@ class Lock extends Entity {
   onModelLoaded = (model: any) => {
     this.mesh = model.scene
     this.mesh.scale.setScalar(0.5)
-    this.mesh.translateY(-0.8)
+    this.mesh.translateY(-1)
     this.group.add(this.mesh)
   }
 

@@ -6,10 +6,10 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js"
 class Light extends Entity {
   constructor(app: ThreejsApp, params: {}) {
     super(app, params)
-    console.log("Hi")
     this.loadModel()
   }
 
+  // TODO: load model once, reuse in Entities
   loadModel = () => {
     const loader = new GLTFLoader()
     loader.load(
@@ -22,8 +22,8 @@ class Light extends Entity {
 
   onModelLoaded = (model: any) => {
     this.mesh = model.scene
-    this.mesh.scale.setScalar(0.075)
-    this.mesh.translateZ(1.75)
+    this.mesh.scale.setScalar(0.06)
+    this.mesh.translateZ(1.4)
     this.group.add(this.mesh)
   }
 

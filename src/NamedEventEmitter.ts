@@ -16,10 +16,10 @@ class EventEmitter {
     )
   }
 
-  trigger = (eventName: string) => {
+  trigger = (eventName: string, data: any = undefined) => {
     this.handlers
       .filter(({ event }) => event == eventName)
-      .forEach(({ handler }) => handler())
+      .forEach(({ handler }) => handler(data))
   }
 }
 

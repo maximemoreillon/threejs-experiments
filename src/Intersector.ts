@@ -4,15 +4,17 @@ import NamedEventEmitter from "./NamedEventEmitter"
 
 class Intersector {
   app: ThreejsApp
-  object: Object3D
+
+  // TODO: consider an array of objects instead
+  objects: Object3D[]
 
   raycaster = new Raycaster()
   pointer = new Vector2()
   eventEmitter = new NamedEventEmitter()
 
-  constructor(app: ThreejsApp, object: Object3D) {
+  constructor(app: ThreejsApp, objects: Object3D[]) {
     this.app = app
-    this.object = object
+    this.objects = objects
     this.raycaster = new Raycaster()
 
     const { domElement } = app.renderer
@@ -24,20 +26,22 @@ class Intersector {
   onPointerMove = (event: PointerEvent) => {
     this.updatePointer(event)
     this.raycaster.setFromCamera(this.pointer, this.app.camera)
-    const [intersect] = this.raycaster.intersectObjects([this.object], true)
+    const [intersect] = this.raycaster.intersectObjects(this.objects, false)
     if (!intersect) return
-    this.eventEmitter.trigger("pointerMove")
+    this.eventEmitter.trigger("pointerMove", intersect)
   }
 
   onPointerDown = (event: PointerEvent) => {
     this.updatePointer(event)
     this.raycaster.setFromCamera(this.pointer, this.app.camera)
-    const [intersect] = this.raycaster.intersectObjects([this.object], true)
+    const [intersect] = this.raycaster.intersectObjects(this.objects, false)
     if (!intersect) return
-    this.eventEmitter.trigger("pointerDown")
+    this.eventEmitter.trigger("pointerDown", intersect)
   }
 
-  onPointerUp = () => {}
+  onPointerUp = () => {
+    this.eventEmitter.trigger("pointerUp")
+  }
 
   updatePointer = ({ clientX, clientY }: PointerEvent) => {
     const { left, top, width, height } =
