@@ -7,6 +7,8 @@ class EntityManager {
   // Are both needed?
   entities: Entity[]
   entitiesMap: Map<number, Entity>
+
+  // Event emitter. Unused but just in case
   eventEmitter: EventEmitter
 
   constructor(app: ThreejsApp) {
@@ -19,6 +21,8 @@ class EntityManager {
   add = (newEntity: Entity) => {
     this.entities.push(newEntity)
     this.entitiesMap.set(newEntity.group.id, newEntity)
+
+    // Unused
     this.eventEmitter.trigger("entityAdded", newEntity.group.id)
 
     // In the original code:
@@ -31,6 +35,8 @@ class EntityManager {
     this.app.scene.remove(entityToRemove.group)
     this.entities = this.entities.filter((e) => e !== entityToRemove)
     this.entitiesMap.delete(entityId)
+
+    // Unused
     this.eventEmitter.trigger("entityRemoved", entityId)
   }
 }

@@ -9,14 +9,15 @@ import {
   BoxHelper,
   MeshBasicMaterial,
 } from "three"
-import Intersector from "./Intersector"
 import ThreejsApp from "./ThreejsApp"
 
 class EntitySelector {
   app: ThreejsApp
 
   selected: any
-  intersector: Intersector
+
+  // Not using intersector because Entities do not update
+  raycaster = new Raycaster()
 
   boxHelper = new BoxHelper(new Mesh())
   group = new Group()
@@ -29,6 +30,8 @@ class EntitySelector {
   constructor(app: ThreejsApp) {
     this.app = app
     this.selected = null
+
+    const { domElement } = app.renderer
 
     const thickness = 0.2
     const length = 2
@@ -48,41 +51,54 @@ class EntitySelector {
       ),
     ]
 
-    // handles.forEach((h, index) => {
-    //   h.position.setComponent(index, 0.5 * length)
-    //   this.group.add(h)
-    // })
+    handles.forEach((h, index) => {
+      h.position.setComponent(index, 2)
+      this.group.add(h)
+    })
 
     const selectionBox = new Mesh(
       new BoxGeometry(2, 2, 2),
       new MeshBasicMaterial({
         color: 0xffff00,
-        opacity: 0.25,
         transparent: true,
+        opacity: 0.25,
       })
     )
 
     this.group.add(selectionBox)
 
-    // FIXME: does not update if entities are added
-    const objects = this.app.entityManager.entities.map(({ hitbox }) => hitbox)
-    this.intersector = new Intersector(this.app, objects)
-    this.intersector.eventEmitter.on("pointerDown", this.onPointerDown)
-
-    this.app.entityManager.eventEmitter.on("entityAdded", () => {
-      this.intersector.objects = this.app.entityManager.entities.map(
-        ({ hitbox }) => hitbox
-      )
-    })
+    domElement.addEventListener("pointerdown", this.onPointerDown)
   }
 
-  onPointerDown = (intersect: any) => {
+  onPointerDown = ({ clientX, clientY }: PointerEvent) => {
+    const { left, top, width, height } =
+      this.app.renderer.domElement.getBoundingClientRect()
+
+    const pointer = {
+      x: ((clientX - left) / width) * 2 - 1,
+      y: -((clientY - top) / height) * 2 + 1,
+    }
+
+    this.raycaster.setFromCamera(pointer, this.app.camera)
+
+    const objects = this.app.entityManager.entities.map(({ hitbox }) => hitbox)
+    const intersects = this.raycaster.intersectObjects(objects, false)
+    const [intersect] = intersects
+    if (!intersect) return
+
     if (this.selected) this.selected.remove(this.group)
 
     // Selected becomes the group
     this.selected = intersect.object.parent
 
     this.selected.add(this.group)
+  }
+
+  updatePointer = ({ clientX, clientY }: PointerEvent) => {
+    const { left, top, width, height } =
+      this.app.renderer.domElement.getBoundingClientRect()
+    this.pointer.x = ((clientX - left) / width) * 2 - 1
+    this.pointer.y = -((clientY - top) / height) * 2 + 1
   }
 }
 
